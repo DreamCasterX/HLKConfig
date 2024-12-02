@@ -8,7 +8,6 @@ do {
 
     switch ($choice) {
         "s" {
-            # Server Configuration
             Write-Host "Now configuring HLK Server..."
             # Enable guest account 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableGuestAccount" -Value 1 
@@ -45,18 +44,16 @@ do {
 			cmd /c net user administrator 8888 >$null
 			Write-Host "Password changed to 8888 successfully."
 
-			# 手動設定 IP (請替換 "Ethernet" 為您的網路介面卡名稱)
+			# Set IP (Default interface name is Ethernet)
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
 			Write-Host ""
 			$ip4 = Read-Host "Input IP4 address (192.168.1.x)"
 			$ip6 = Read-Host "Input IP6 address (2001:db8::x)"
-			Set-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
-			Set-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 >$null
-
-
+			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 >$null
             Write-Host ""
-            Write-Host "**All is done!**"
-			Write-Host "Remember to turn off the firewall after installing HLK controller + studio"
+            Write-Host "**All is done!"
+			Write-Host "**Remember to turn off the firewall after installing HLK Controller + Studio"
 			Write-Host ""
 			do {
 				$choice = Read-Host "Do you want to reboot the system now? (y/n) "
@@ -70,23 +67,21 @@ do {
             }
         }
         "c" {
-            # Client Configuration
             Write-Host "Now configuring HLK Client..."
-			
             # Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 			
-			# 手動設定 IP (請替換 "Ethernet" 為您的網路介面卡名稱)
+			# Set IP (Default interface name is Ethernet)
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
 			Write-Host ""
 			$ip4 = Read-Host "Input IP4 address (192.168.1.x)"
 			$ip6 = Read-Host "Input IP6 address (2001:db8::x)"
-			Set-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
-			Set-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 >$null
-			
+			$server_ip6 = Read-Host "Input HLK server IP6 address (2001:db8::x)"
+			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $server_ip6 >$null
 			Write-Host ""
-            Write-Host "**All is done!**"
-			Write-Host "Remember to turn off the firewall after installing HLK client"
+            Write-Host "**All is done!"
+			Write-Host "**Remember to turn off the firewall after installing HLK Controller + Studio"
 			Write-Host ""
             break 
         }
