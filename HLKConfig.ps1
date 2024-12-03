@@ -3,6 +3,8 @@ $creator = "Mike Lu"
 $change_date = "2024/12/03"
 $version = "1.0"
 
+# [Note] 
+# Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` first if the script is restriced
 
 do {
     Clear-Host
@@ -143,7 +145,8 @@ do {
         }
 		"u" {
 			do {
-				$uninstall  = Read-Host "This option will remove everything about HLK from the system, continue? (y/n)" -ForegroundColor Yellow
+				Write-Host "This option will remove everything about HLK from the system, continue? (y/n)" -ForegroundColor Yellow
+				$uninstall = Read-Host
 				$uninstall = $uninstall.ToLower()
 			} until ($uninstall -eq "y" -or $uninstall -eq "n")
 			if ($uninstall -eq "y") {
@@ -172,7 +175,6 @@ do {
 				} else {
 					exit
 				}
-                break
 			} else {
 				break
             }
