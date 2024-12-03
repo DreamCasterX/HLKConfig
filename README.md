@@ -9,5 +9,5 @@
 + Install Windows Server on the host
 + Double click on `HLKConfig.ps1` and input required data
 + Manually install HLK
-+ Manual turn off firewall after installing HLK
++ Manually turn off firewall after installing HLK
 
