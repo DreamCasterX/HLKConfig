@@ -1,15 +1,27 @@
 ﻿
+$creator = "Mike Lu"
+$change_date = "2024/12/03"
+$version = "1.0"
+
+
 do {
     Clear-Host
-	Write-Host "[HLK Auto Configuration Tool  v1.0]"
+	Write-Host "[HLK Auto Configuration Tool]"
 	Write-Host ""
-    $choice = Read-Host "Are you setting a HLK (c)Client or (s)Server ? "
+	Write-Host "Select an action to configure"
+	Write-Host "(c) Client   (s) Server   (u) Uninstall HLK   (q) Quit "
+	$choice = Read-Host "ans"
     $choice = $choice.ToLower()
-
     switch ($choice) {
         "s" {
             Write-Host "Now configuring HLK Server..."
-            # Enable guest account 
+            # Set sleep & display off to Never
+			powercfg /change standby-timeout-ac 0
+			powercfg /change standby-timeout-dc 0
+			powercfg /change monitor-timeout-ac 0
+			powercfg /change monitor-timeout-dc 0
+			
+			# Enable guest account 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableGuestAccount" -Value 1 
 
 			# Enable guest account status & disable password complexity in gpedit.msc
@@ -66,7 +78,7 @@ do {
 			Write-Host "IP6 address set to $ip6 successfully."
 			
             Write-Host ""
-            Write-Host "**All is done!"
+            Write-Host "**All is done!" -ForegroundColor Green
 			Write-Host "**Remember to turn off the firewall after installing HLK Controller + Studio"
 			Write-Host ""
 			do {
@@ -82,7 +94,13 @@ do {
         }
         "c" {
             Write-Host "Now configuring HLK Client..."
-            # Turn off UAC 
+            # Set sleep & display off to Never
+			powercfg /change standby-timeout-ac 0
+			powercfg /change standby-timeout-dc 0
+			powercfg /change monitor-timeout-ac 0
+			powercfg /change monitor-timeout-dc 0
+			
+			# Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 			
 			# Set IP (Default interface:Ethernet    IP4:192.168.1.x    IP6:2001:db8::x    IP6 gateway:2001:db8::1)
@@ -114,7 +132,7 @@ do {
 			Write-Host "IP6 gateway set to $server_ip6 successfully."
 			
 			Write-Host ""
-            Write-Host "**All is done!"
+            Write-Host "**All is done!" -ForegroundColor Green
 			Write-Host "**Remember to turn off the firewall after installing HLK Client"
 			Write-Host ""
 			pause
@@ -123,13 +141,45 @@ do {
         "q" {
             break
         }
+		"u" {
+			do {
+				$uninstall  = Read-Host "This option will remove everything about HLK from the system, continue? (y/n)" -ForegroundColor Yellow
+				$uninstall = $uninstall.ToLower()
+			} until ($uninstall -eq "y" -or $uninstall -eq "n")
+			if ($uninstall -eq "y") {
+				# Uninstall all HLK related programs
+				# Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" -or $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" } | Select-Object -Property Name, Version
+				Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" -or $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" } | ForEach-Object { $_.Uninstall() }
+				Write-Host "All HLK programs removed successfully."
+				
+				# Delete DTMLLUAdminUser account folder
+				# Remove-Item -Path "C:\Users\DTMLLUAdminUser" -Recurse -Force
+				
+				# Turn on firewall
+				netsh advfirewall set allprofiles state on >$null
+				Write-Host "Firewall is turned on successfully."
+				Write-Host ""
+				Write-Host "**All is done!" -ForegroundColor Green
+				Write-Host "**Remember to delete 'C:\Users\DTMLLUAdminUser' folder after signing out"
+				Write-Host ""
+				do {
+					$choice = Read-Host "Sign out the DTMLLUAdminUser account now? (y/n) "
+					$choice = $choice.ToLower()
+				} until ($choice -eq "y" -or $choice -eq "n")
+				if ($choice -eq "y") {
+					shutdown /l
+					break
+				} else {
+					exit
+				}
+                break
+			} else {
+				break
+            }
+        }
         default {
             Write-Host "Invalid input."
         }
     }
-} until ($choice -in "s", "c", "q")
-
-
-
-
+} until ($choice -in "s", "c", "q", "u")
 
