@@ -1,6 +1,6 @@
 ﻿
 $creator = "Mike Lu"
-$change_date = "2024/12/03"
+$change_date = "2024/12/04"
 $version = "1.0"
 
 # [Note] 
@@ -151,9 +151,25 @@ do {
 			} until ($uninstall -eq "y" -or $uninstall -eq "n")
 			if ($uninstall -eq "y") {
 				# Uninstall all HLK related programs
-				# Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" -or $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" } | Select-Object -Property Name, Version
-				Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" -or $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" } | ForEach-Object { $_.Uninstall() }
-				Write-Host "All HLK programs removed successfully."
+				# Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" -or $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" -or $_.Name -like "*Debuggers*" } | Select-Object -Property Name, Version
+				Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Windows Hardware Lab Kit Client*" } | ForEach-Object { $_.Uninstall() }
+				Write-Host "Main HLK program removed successfully."
+				Write-Host ""
+				Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Application Verifier*" -or $_.Name -like "*WPT*" -or $_.Name -like "*WDTF*" -or $_.Name -like "*HLK*" -or $_.Name -like "*Debuggers*" } | ForEach-Object { $_.Uninstall() }
+				Write-Host "Additional HLK patches removed successfully."
+				
+				# Delete all HLK related directories
+				$paths = "C:\HLK", "C:\Program Files\Windows Kits", "C:\Program Files (x86)\Application Verifier", "C:\Program Files\Application Verifier"
+				foreach ($path in $paths) {
+				if (Test-Path $path) {
+					Remove-Item -Path $path -Recurse -Force
+					}
+				}
+				Write-Host "All HLK directories removed successfully."
+				
+				# Delete DTMLLUAdminUser account
+				Remove-LocalUser -Name "DTMLLUAdminUser"
+				Write-Host "DTMLLUAdminUser account deleted successfully."
 				
 				# Delete DTMLLUAdminUser account folder
 				# Remove-Item -Path "C:\Users\DTMLLUAdminUser" -Recurse -Force
