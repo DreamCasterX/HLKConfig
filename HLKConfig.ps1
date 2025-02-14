@@ -1,22 +1,26 @@
 ﻿
-$creator = "Mike Lu"
-$change_date = "2024/12/04"
+$creator = "Mike Lu (klu7@lenovo.com)"
+$change_date = "2/14/2025"
 $version = "1.0"
 
 # [Note] 
 # Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` first if the script is restriced
 
+# User-defined settings
+$NIC_interface="Ethernet0"  # For NB: Ethernet    For Server: Ethernet0
+
+
 do {
     Clear-Host
 	Write-Host "[HLK Auto Configuration Tool]"
 	Write-Host ""
-	Write-Host "Select an action to configure"
-	Write-Host "(c) Client   (s) Server   (u) Uninstall HLK   (q) Quit "
+	Write-Host "Select a configuration option"
+	Write-Host "(s) SUT   (t) TC   (u) Uninstall HLK from SUT  (q) Quit "
 	$choice = Read-Host "ans"
     $choice = $choice.ToLower()
     switch ($choice) {
-        "s" {
-            Write-Host "Now configuring HLK Server..."
+        "t" {
+            Write-Host "Now configuring HLK TC..."
             # Set sleep & display off to Never
 			powercfg /change standby-timeout-ac 0
 			powercfg /change standby-timeout-dc 0
@@ -50,33 +54,45 @@ do {
 			# Disable Ctrl+Alt+Del
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "disablecad" -Value 1
 
-			# Rename computer (reboot requierd)
-			Rename-Computer -NewName HLK >$null
-			Write-Host "Computer name changed to HLK successfully."
+			# Rename computer (reboot requierd) - Press Enter to use the default setting
+            $computer_name = Read-Host "Set computer name (press Enter to accept default: Win11-TC)"
+            if ([string]::IsNullOrWhiteSpace($computer_name)) {
+                $computer_name = "Win11-TC"
+            }
+            Rename-Computer -NewName $computer_name -Force >$null
+            Write-Host "Computer name changed to $computer_name successfully."
 			
-			# Set password
-			cmd /c net user administrator 8888 >$null
-			Write-Host "Password changed to 8888 successfully."
+			# Set password  - Press Enter to use the default setting
+            $computer_password =  Read-Host "Set computer password (press Enter to accept default: 8888)" 
+            if ([string]::IsNullOrWhiteSpace($computer_password)) {
+                $computer_password = "8888"
+            }
+			cmd /c net user administrator $computer_password >$null
+			Write-Host "Password changed to $computer_password successfully."
 
-			# Set IP (Default interface:Ethernet    IP4:192.168.1.1    IP6:2001:db8::1)
+			# Define IP for NIC
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
 			Write-Host ""
-			# $ip4 = Read-Host "Input IP4 address (192.168.1.x)"
-			# $ip6 = Read-Host "Input IP6 address (2001:db8::x)"
-			$ip4 = "192.168.1.1"
-			$ip6 = "2001:db8::1"
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: 192.168.1.1)"
+            if ([string]::IsNullOrWhiteSpace($ip4)) {
+                $ip4 = "192.168.1.1"
+            }
+			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: 2001:db8::1)"
+            if ([string]::IsNullOrWhiteSpace($ip6)) {
+                $ip6 = "2001:db8::1"
+            }
 			
 			# Disable DHCP
-			Set-NetIPInterface -InterfaceAlias "Ethernet" -Dhcp Disabled >$null
+			Set-NetIPInterface -InterfaceAlias $NIC_interface -Dhcp Disabled >$null
 			
 			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
 
 			# Set new IPv4 & IPv6 address
-			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
-			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 >$null
+			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip6 -PrefixLength 64 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
 			
             Write-Host ""
@@ -94,8 +110,8 @@ do {
 				exit
             }
         }
-        "c" {
-            Write-Host "Now configuring HLK Client..."
+        "s" {
+            Write-Host "Now configuring HLK SUT..."
             # Set sleep & display off to Never
 			powercfg /change standby-timeout-ac 0
 			powercfg /change standby-timeout-dc 0
@@ -105,37 +121,43 @@ do {
 			# Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 			
-			# Set IP (Default interface:Ethernet    IP4:192.168.1.x    IP6:2001:db8::x    IP6 gateway:2001:db8::1)
+			# Set IP
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
-			Write-Host ""
-			# $ip4 = Read-Host "Input IP4 address (192.168.1.x)"
-			# $ip6 = Read-Host "Input IP6 address (2001:db8::x)"
-			# $server_ip6 = Read-Host "Input HLK server IP6 address (2001:db8::x)"
-			$ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
-			$ip4 = "192.168.1.$ip4_input"
-			$ip6 = "2001:db8::$ip4_input"
-			$server_ip6 = "2001:db8::1"
-			
+            Write-Host ""
+            # $ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: 192.168.1.2)"
+            if ([string]::IsNullOrWhiteSpace($ip4)) {
+                $ip4 = "192.168.1.2"
+            }
+			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: 2001:db8::2)"
+            if ([string]::IsNullOrWhiteSpace($ip6)) {
+                $ip6 = "2001:db8::2"
+            }
+            $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: 2001:db8::1)"
+                     if ([string]::IsNullOrWhiteSpace($ip6)) {
+                $TC_ip6 = "2001:db8::1"
+            }
+
 			# Disable DHCP
-			Set-NetIPInterface -InterfaceAlias "Ethernet" -Dhcp Disabled >$null
+			Set-NetIPInterface -InterfaceAlias "$NIC_interface" -Dhcp Disabled >$null
 			
 			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "Ethernet" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
 			
 			# Remove existing IPv6 gateway
-			Get-NetRoute -InterfaceAlias "Ethernet" -AddressFamily IPv6 | Remove-NetRoute -Confirm:$false >$null
+			Get-NetRoute -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetRoute -Confirm:$false >$null
 			
 			# Set new IPv4 & IPv6 address/gateway
-			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
-			New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $server_ip6 >$null
+			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $server_ip6 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
-			Write-Host "IP6 gateway set to $server_ip6 successfully."
+			Write-Host "IP6 gateway set to $TC_ip6 successfully."
 			
 			Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
-			Write-Host "**Remember to turn off the firewall after installing HLK Client"
+			Write-Host "**Remember to turn off the firewall after installing HLK"
 			Write-Host ""
 			pause
             break 
