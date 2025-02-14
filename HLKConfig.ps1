@@ -55,7 +55,7 @@ do {
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "disablecad" -Value 1
 
 			# Rename computer (reboot requierd) - Press Enter to use the default setting
-            $computer_name = Read-Host "Set computer name (press Enter to accept default: Win11-TC)"
+            $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-TC])"
             if ([string]::IsNullOrWhiteSpace($computer_name)) {
                 $computer_name = "Win11-TC"
             }
@@ -63,7 +63,7 @@ do {
             Write-Host "Computer name changed to $computer_name successfully."
 			
 			# Set password  - Press Enter to use the default setting
-            $computer_password =  Read-Host "Set computer password (press Enter to accept default: 8888)" 
+            $computer_password =  Read-Host "Set computer password (press Enter to accept default: [8888])" 
             if ([string]::IsNullOrWhiteSpace($computer_password)) {
                 $computer_password = "8888"
             }
@@ -73,11 +73,11 @@ do {
 			# Define IP for NIC
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
 			Write-Host ""
-			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: 192.168.1.1)"
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.1])"
             if ([string]::IsNullOrWhiteSpace($ip4)) {
                 $ip4 = "192.168.1.1"
             }
-			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: 2001:db8::1)"
+			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::1])"
             if ([string]::IsNullOrWhiteSpace($ip6)) {
                 $ip6 = "2001:db8::1"
             }
@@ -125,15 +125,15 @@ do {
 			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
             Write-Host ""
             # $ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
-			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: 192.168.1.2)"
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.2])"
             if ([string]::IsNullOrWhiteSpace($ip4)) {
                 $ip4 = "192.168.1.2"
             }
-			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: 2001:db8::2)"
+			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::2])"
             if ([string]::IsNullOrWhiteSpace($ip6)) {
                 $ip6 = "2001:db8::2"
             }
-            $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: 2001:db8::1)"
+            $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: [2001:db8::1])"
                      if ([string]::IsNullOrWhiteSpace($ip6)) {
                 $TC_ip6 = "2001:db8::1"
             }
