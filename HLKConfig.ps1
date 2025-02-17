@@ -48,6 +48,7 @@ do {
 
 			# Allow insecure guest auth in gpedit.msc
 			# TODO
+            Set-SmbClientConfiguration -EnableInsecureGuestLogons $true -Force
 
 			# Disable password expiration (reboot required)
 			net accounts /maxpwage:unlimited >$null
