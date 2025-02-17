@@ -126,9 +126,11 @@ do {
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip6 -PrefixLength 64 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
 			
+            # Turn off firewall
+            netsh advfirewall set allprofiles state off
+            
             Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
-			Write-Host "**Remember to turn off the firewall after installing the HLK Controller + Studio"
 			Write-Host ""
 			do {
 				$choice = Read-Host "Do you want to reboot the system now? (y/n) "
