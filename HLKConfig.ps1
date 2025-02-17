@@ -127,7 +127,7 @@ do {
 			Write-Host "IP6 address set to $ip6 successfully."
 			
             # Turn off firewall
-            netsh advfirewall set allprofiles state off
+            netsh advfirewall set allprofiles state off > $null 2>&1
             
             Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
