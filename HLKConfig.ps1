@@ -1,13 +1,14 @@
 ﻿
 $creator = "Mike Lu (klu7@lenovo.com)"
-$change_date = "2/14/2025"
+$change_date = "2/17/2025"
 $version = "1.0"
 
 # [Note] 
 # Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned` first if the script is restriced
 
+
 # User-defined settings
-$NIC_interface="Ethernet0"  # For NB: Ethernet    For Server: Ethernet0
+$time_zone = 'Taipei Standard Time'   # TDC = 'Taipei Standard Time'    BDC = 'China Standard Time'  RDC = 'Pacific Standard Time'
 
 
 do {
@@ -54,6 +55,9 @@ do {
 			# Disable Ctrl+Alt+Del
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "disablecad" -Value 1
 
+            # Set local time zone
+            Set-TimeZone -Name "$time_zone"
+            
 			# Rename computer (reboot requierd) - Press Enter to use the default setting
             $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-TC])"
             if ([string]::IsNullOrWhiteSpace($computer_name)) {
@@ -70,8 +74,35 @@ do {
 			cmd /c net user administrator $computer_password >$null
 			Write-Host "Password changed to $computer_password successfully."
 
-			# Define IP for NIC
-			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
+			# Get network adpter interface to use
+			# Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }  # Only display Ethernet
+            $adapters = Get-NetAdapter -Physical
+            $adapterCount = ($adapters | Measure-Object).Count
+            
+            $adapters | ForEach-Object {
+                [PSCustomObject]@{
+                    No = [array]::IndexOf($adapters, $_) + 1
+                    Name = $_.Name
+                    InterfaceDescription = $_.InterfaceDescription
+                    Status = $_.Status
+                    MacAddress = $_.MacAddress
+                    LinkSpeed = $_.LinkSpeed
+                }
+            } | Format-Table -AutoSize
+            $validSelection = $false
+            
+            while (-not $validSelection) {
+                $selection = Read-Host "Input network adapter number (press Enter to accept default: [1])"
+                if ([string]::IsNullOrWhiteSpace($selection)) {
+                    $selection = 1
+                    $validSelection = $true
+                } elseif ($selection -match "^\d+$" -and $selection -ge 1 -and $selection -le $adapterCount) {
+                    $validSelection = $true
+                }
+            }
+            $selectedAdapter = $adapters[$selection - 1].Name
+            Write-Host "Selected adapter: $selectedAdapter"
+
 			Write-Host ""
 			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.1])"
             if ([string]::IsNullOrWhiteSpace($ip4)) {
@@ -83,21 +114,21 @@ do {
             }
 			
 			# Disable DHCP
-			Set-NetIPInterface -InterfaceAlias $NIC_interface -Dhcp Disabled >$null
+			Set-NetIPInterface -InterfaceAlias "$selectedAdapter" -Dhcp Disabled >$null
 			
 			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
 
 			# Set new IPv4 & IPv6 address
-			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
-			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip6 -PrefixLength 64 >$null
+			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip6 -PrefixLength 64 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
 			
             Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
-			Write-Host "**Remember to turn off the firewall after installing HLK Controller + Studio"
+			Write-Host "**Remember to turn off the firewall after installing the HLK Controller + Studio"
 			Write-Host ""
 			do {
 				$choice = Read-Host "Do you want to reboot the system now? (y/n) "
@@ -121,8 +152,46 @@ do {
 			# Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 			
-			# Set IP
-			Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }
+            # Set local time zone
+            Set-TimeZone -Name "$time_zone"
+            
+            # Rename computer (reboot requierd) - Press Enter to use the default setting
+            $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-SUT])"
+            if ([string]::IsNullOrWhiteSpace($computer_name)) {
+                $computer_name = "Win11-SUT"
+            }
+            Rename-Computer -NewName $computer_name -Force >$null
+            Write-Host "Computer name changed to $computer_name successfully."
+            
+			# Get network adpter interface to use
+			# Get-NetAdapter -Physical | Where-Object { $_.Name -match "^Ethernet" }  # Only display Ethernet
+            $adapters = Get-NetAdapter -Physical
+            $adapterCount = ($adapters | Measure-Object).Count
+            
+            $adapters | ForEach-Object {
+                [PSCustomObject]@{
+                    No = [array]::IndexOf($adapters, $_) + 1
+                    Name = $_.Name
+                    InterfaceDescription = $_.InterfaceDescription
+                    Status = $_.Status
+                    MacAddress = $_.MacAddress
+                    LinkSpeed = $_.LinkSpeed
+                }
+            } | Format-Table -AutoSize
+            $validSelection = $false
+            
+            while (-not $validSelection) {
+                $selection = Read-Host "Input network adapter number (press Enter to accept default: [1])"
+                if ([string]::IsNullOrWhiteSpace($selection)) {
+                    $selection = 1
+                    $validSelection = $true
+                } elseif ($selection -match "^\d+$" -and $selection -ge 1 -and $selection -le $adapterCount) {
+                    $validSelection = $true
+                }
+            }
+            $selectedAdapter = $adapters[$selection - 1].Name
+            Write-Host "Selected adapter: $selectedAdapter"
+            
             Write-Host ""
             # $ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
 			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.2])"
@@ -139,25 +208,25 @@ do {
             }
 
 			# Disable DHCP
-			Set-NetIPInterface -InterfaceAlias "$NIC_interface" -Dhcp Disabled >$null
+			Set-NetIPInterface -InterfaceAlias "$selectedAdapter" -Dhcp Disabled >$null
 			
 			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
 			
 			# Remove existing IPv6 gateway
-			Get-NetRoute -InterfaceAlias "$NIC_interface" -AddressFamily IPv6 | Remove-NetRoute -Confirm:$false >$null
+			Get-NetRoute -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetRoute -Confirm:$false >$null
 			
 			# Set new IPv4 & IPv6 address/gateway
-			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip4 -PrefixLength 24 >$null
+			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
-			New-NetIPAddress -InterfaceAlias "$NIC_interface" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $server_ip6 >$null
+			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $TC_ip6 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
 			Write-Host "IP6 gateway set to $TC_ip6 successfully."
 			
 			Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
-			Write-Host "**Remember to turn off the firewall after installing HLK"
+			Write-Host "**Remember to turn off the firewall after installing the HLK"
 			Write-Host ""
 			pause
             break 
@@ -221,5 +290,5 @@ do {
             Write-Host "Invalid input."
         }
     }
-} until ($choice -in "s", "c", "q", "u")
+} until ($choice -in "s", "t", "q", "u")
 
