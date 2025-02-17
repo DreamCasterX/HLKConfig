@@ -43,13 +43,6 @@ do {
 			# Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 
-			# Allow insecure guest auth
-			Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "AllowInsecureGuestAuth" -Value 1
-
-			# Allow insecure guest auth in gpedit.msc
-			# TODO
-            Set-SmbClientConfiguration -EnableInsecureGuestLogons $true -Force
-
 			# Disable password expiration (reboot required)
 			net accounts /maxpwage:unlimited >$null
 
@@ -155,6 +148,15 @@ do {
 			# Turn off UAC 
 			Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0
 			
+			# Allow insecure guest auth
+			Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "AllowInsecureGuestAuth" -Value 1
+
+			# Allow insecure guest auth in gpedit.msc (Function works but GUI does not change)
+            Set-SmbClientConfiguration -EnableInsecureGuestLogons $true -Force
+            
+            # Fix the error "An Extended Error Has Occurred" during SMB communication on Windows 11
+            Set-SmbClientConfiguration -RequireSecuritySignature $false -Force
+            
             # Set local time zone
             Set-TimeZone -Name "$time_zone"
             
