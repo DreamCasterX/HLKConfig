@@ -1,6 +1,6 @@
 ﻿
 $creator = "Mike Lu (klu7@lenovo.com)"
-$change_date = "2/17/2025"
+$change_date = "2/18/2025"
 $version = "1.0"
 
 # [Note] 
@@ -54,17 +54,13 @@ do {
             
 			# Rename computer (reboot requierd) - Press Enter to use the default setting
             $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-TC])"
-            if ([string]::IsNullOrWhiteSpace($computer_name)) {
-                $computer_name = "Win11-TC"
-            }
+            if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "Win11-TC" }
             Rename-Computer -NewName $computer_name -Force >$null
             Write-Host "Computer name changed to $computer_name successfully."
 			
 			# Set password  - Press Enter to use the default setting
             $computer_password =  Read-Host "Set computer password (press Enter to accept default: [8888])" 
-            if ([string]::IsNullOrWhiteSpace($computer_password)) {
-                $computer_password = "8888"
-            }
+            if ([string]::IsNullOrWhiteSpace($computer_password)) { $computer_password = "8888" }
 			cmd /c net user administrator $computer_password >$null
 			Write-Host "Password changed to $computer_password successfully."
 
@@ -99,20 +95,16 @@ do {
 
 			Write-Host ""
 			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.1])"
-            if ([string]::IsNullOrWhiteSpace($ip4)) {
-                $ip4 = "192.168.1.1"
-            }
+            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 = "192.168.1.1" }
 			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::1])"
-            if ([string]::IsNullOrWhiteSpace($ip6)) {
-                $ip6 = "2001:db8::1"
-            }
+            if ([string]::IsNullOrWhiteSpace($ip6)) { $ip6 = "2001:db8::1" }
 			
 			# Disable DHCP
 			Set-NetIPInterface -InterfaceAlias "$selectedAdapter" -Dhcp Disabled >$null
 			
-			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			# Clear existing IPv4 and IPv6 addresses
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
 
 			# Set new IPv4 & IPv6 address
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
@@ -154,7 +146,7 @@ do {
 			# Allow insecure guest auth in gpedit.msc (Function works but GUI does not change)
             Set-SmbClientConfiguration -EnableInsecureGuestLogons $true -Force
             
-            # Fix the error "An Extended Error Has Occurred" during SMB communication on Windows 11
+            # Workaround for error "An Extended Error Has Occurred" during SMB communication on Windows 11
             Set-SmbClientConfiguration -RequireSecuritySignature $false -Force
             
             # Set local time zone
@@ -162,9 +154,7 @@ do {
             
             # Rename computer (reboot requierd) - Press Enter to use the default setting
             $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-SUT])"
-            if ([string]::IsNullOrWhiteSpace($computer_name)) {
-                $computer_name = "Win11-SUT"
-            }
+            if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "Win11-SUT" }
             Rename-Computer -NewName $computer_name -Force >$null
             Write-Host "Computer name changed to $computer_name successfully."
             
@@ -200,27 +190,21 @@ do {
             Write-Host ""
             # $ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
 			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.2])"
-            if ([string]::IsNullOrWhiteSpace($ip4)) {
-                $ip4 = "192.168.1.2"
-            }
+            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 = "192.168.1.2" }
 			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::2])"
-            if ([string]::IsNullOrWhiteSpace($ip6)) {
-                $ip6 = "2001:db8::2"
-            }
+            if ([string]::IsNullOrWhiteSpace($ip6)) { $ip6 = "2001:db8::2" }
             $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: [2001:db8::1])"
-                     if ([string]::IsNullOrWhiteSpace($ip6)) {
-                $TC_ip6 = "2001:db8::1"
-            }
+            if ([string]::IsNullOrWhiteSpace($ip6)) { $TC_ip6 = "2001:db8::1" }
 
 			# Disable DHCP
 			Set-NetIPInterface -InterfaceAlias "$selectedAdapter" -Dhcp Disabled >$null
 			
-			# Remove all existing IPv4 and IPv6 addresses
-			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 | Remove-NetIPAddress -Confirm:$false >$null
-			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetIPAddress -Confirm:$false >$null
+			# Clear existing IPv4 and IPv6 addresses
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
+			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
 			
 			# Remove existing IPv6 gateway
-			Get-NetRoute -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 | Remove-NetRoute -Confirm:$false >$null
+			Get-NetRoute -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue >$null
 			
 			# Set new IPv4 & IPv6 address/gateway
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
