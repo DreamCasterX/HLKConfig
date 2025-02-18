@@ -11,6 +11,16 @@ $version = "1.0"
 $time_zone = 'Taipei Standard Time'   # TDC = 'Taipei Standard Time'    BDC = 'China Standard Time'  RDC = 'Pacific Standard Time'
 
 
+
+# Ensure the scipt is run with administrator privileges
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+{   
+    $arguments = "& '" + $myinvocation.mycommand.definition + "'"
+    Start-Process powershell -Verb RunAs -ArgumentList $arguments
+    exit
+}
+
+
 do {
     Clear-Host
 	Write-Host "[HLK Auto Configuration Tool]"
@@ -52,13 +62,13 @@ do {
             # Set local time zone
             Set-TimeZone -Name "$time_zone"
             
-			# Rename computer (reboot requierd) - Press Enter to use the default setting
+			# Rename computer (reboot requierd)
             $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-TC])"
             if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "Win11-TC" }
             Rename-Computer -NewName $computer_name -Force >$null
             Write-Host "Computer name changed to $computer_name successfully."
 			
-			# Set password  - Press Enter to use the default setting
+			# Set password
             $computer_password =  Read-Host "Set computer password (press Enter to accept default: [8888])" 
             if ([string]::IsNullOrWhiteSpace($computer_password)) { $computer_password = "8888" }
 			cmd /c net user administrator $computer_password >$null
@@ -107,6 +117,7 @@ do {
 			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
 
 			# Set new IPv4 & IPv6 address
+            Write-Host ""
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip6 -PrefixLength 64 >$null
@@ -152,7 +163,7 @@ do {
             # Set local time zone
             Set-TimeZone -Name "$time_zone"
             
-            # Rename computer (reboot requierd) - Press Enter to use the default setting
+            # Rename computer (reboot requierd)
             $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-SUT])"
             if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "Win11-SUT" }
             Rename-Computer -NewName $computer_name -Force >$null
@@ -194,7 +205,7 @@ do {
 			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::2])"
             if ([string]::IsNullOrWhiteSpace($ip6)) { $ip6 = "2001:db8::2" }
             $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: [2001:db8::1])"
-            if ([string]::IsNullOrWhiteSpace($ip6)) { $TC_ip6 = "2001:db8::1" }
+            if ([string]::IsNullOrWhiteSpace($TC_ip6)) { $TC_ip6 = "2001:db8::1" }
 
 			# Disable DHCP
 			Set-NetIPInterface -InterfaceAlias "$selectedAdapter" -Dhcp Disabled >$null
@@ -203,19 +214,23 @@ do {
 			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv4 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
 			Get-NetIPAddress -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue >$null
 			
-			# Remove existing IPv6 gateway
+			# Clear existing IPv6 gateway
 			Get-NetRoute -InterfaceAlias "$selectedAdapter" -AddressFamily IPv6 -ErrorAction SilentlyContinue | Remove-NetRoute -Confirm:$false -ErrorAction SilentlyContinue >$null
 			
 			# Set new IPv4 & IPv6 address/gateway
+            Write-Host ""
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip4 -PrefixLength 24 >$null
 			Write-Host "IP4 address set to $ip4 successfully."
 			New-NetIPAddress -InterfaceAlias "$selectedAdapter" -IPAddress $ip6 -PrefixLength 64 -DefaultGateway $TC_ip6 >$null
 			Write-Host "IP6 address set to $ip6 successfully."
 			Write-Host "IP6 gateway set to $TC_ip6 successfully."
 			
+            # Turn off firewall
+            netsh advfirewall set allprofiles state off > $null 2>&1
+            
 			Write-Host ""
             Write-Host "**All is done!" -ForegroundColor Green
-			Write-Host "**Remember to turn off the firewall after installing the HLK"
+			# Write-Host "**Remember to turn off the firewall after installing the HLK"
 			Write-Host ""
 			pause
             break 
