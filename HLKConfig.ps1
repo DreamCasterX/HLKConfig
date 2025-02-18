@@ -103,9 +103,14 @@ do {
             $selectedAdapter = $adapters[$selection - 1].Name
             Write-Host "Selected adapter: $selectedAdapter"
 
+            # Get current IPv4 address of the selected adapter
+            $currentIP = (Get-NetIPAddress -InterfaceAlias $selectedAdapter -AddressFamily IPv4 -ErrorAction SilentlyContinue).IPAddress
+            if (-not $currentIP) { $currentIP = "192.168.1.1" }
+
+            # Ask users to input IP4 and IP6 addresses
 			Write-Host ""
-			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.1])"
-            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 = "192.168.1.1" }
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [$currentIP])"
+            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 = $currentIP }
 			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::1])"
             if ([string]::IsNullOrWhiteSpace($ip6)) { $ip6 = "2001:db8::1" }
 			
@@ -198,10 +203,14 @@ do {
             $selectedAdapter = $adapters[$selection - 1].Name
             Write-Host "Selected adapter: $selectedAdapter"
             
+            # Get current IPv4 address of the selected adapter
+            $currentIP = (Get-NetIPAddress -InterfaceAlias $selectedAdapter -AddressFamily IPv4 -ErrorAction SilentlyContinue).IPAddress
+            if (-not $currentIP) { $currentIP = "192.168.1.2" }
+
             Write-Host ""
             # $ip4_input = Read-Host "Input the last digit of the IP4 address (192.168.1.x)"
-			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [192.168.1.2])"
-            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 = "192.168.1.2" }
+			$ip4 = Read-Host "Input IP4 address (press Enter to accept default: [$currentIP])"
+            if ([string]::IsNullOrWhiteSpace($ip4)) { $ip4 =  $currentIP }
 			$ip6 = Read-Host "Input IP6 address (press Enter to accept default: [2001:db8::2])"
             if ([string]::IsNullOrWhiteSpace($ip6)) { $ip6 = "2001:db8::2" }
             $TC_ip6 = Read-Host "Input HLK server IP6 address as gateway (press Enter to accept default: [2001:db8::1])"
