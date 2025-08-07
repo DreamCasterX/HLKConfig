@@ -1,6 +1,6 @@
 ﻿
-$creator = "Mike Lu (klu7@lenovo.com)"
-$change_date = "2/18/2025"
+$creator = "Mike Lu"
+$change_date = "8/7/2025"
 $version = "1.0"
 
 # [Note] 
@@ -8,7 +8,7 @@ $version = "1.0"
 
 
 # User-defined settings
-$time_zone = 'Taipei Standard Time'   # TDC = 'Taipei Standard Time'    BDC = 'China Standard Time'  RDC = 'Pacific Standard Time'
+$time_zone = 'Taipei Standard Time'
 
 
 
@@ -63,8 +63,8 @@ do {
             Set-TimeZone -Name "$time_zone"
             
 			# Rename computer (reboot requierd)
-            $computer_name = Read-Host "Set computer name (press Enter to accept default: [Win11-TC])"
-            if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "Win11-TC" }
+            $computer_name = Read-Host "Set computer name (press Enter to accept default: [HLK])"
+            if ([string]::IsNullOrWhiteSpace($computer_name)) { $computer_name = "HLK" }
             Rename-Computer -NewName $computer_name -Force >$null
             Write-Host "Computer name changed to $computer_name successfully."
 			
